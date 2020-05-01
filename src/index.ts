@@ -23,18 +23,11 @@ const PORT: number = parseInt(env['PORT'] || '3300')
 
 const app = express()
 
-// const authorize: RequestHandler = function(rawReq: express.Request, res: express.Response, next: NextFunction): any {
-//   let req = rawReq as OpenidRequest
-
-//   (req.openid as any).user
-//   req.openid
-//   return next()
-// }
-
 interface Authorizer {
   (user: UserinfoResponse): boolean
 }
-function authorizeWith(authz: Authorizer): RequestHandler {
+function authorizeWith(authz: Authorizer | null = null): RequestHandler {
+  const authorizer = authz || ((_) => true)
   return (
     rawReq: express.Request,
     res: express.Response,
@@ -57,7 +50,7 @@ function authorizeWith(authz: Authorizer): RequestHandler {
       )
     }
     let user = userUnsafe as UserinfoResponse
-    if (!authz(user)) {
+    if (!authorizer(user)) {
       return next(
         new createError.Forbidden('You are not authorized for this resource.')
       )
@@ -82,7 +75,7 @@ router.get('/2', (_, res) => {
 })
 router.get(
   '/authtest',
-  authorizeWith((_) => true),
+  authorizeWith(),
   (req, res) => {
     let user = getUserInfo(req)!
     res.send(user)
