@@ -1,0 +1,14 @@
+{
+  "devDependencies": {
+    "@types/express": "^4.17.6",
+    "concurrently": "^5.2.0",
+    "nodemon": "^2.0.3",
+    "typescript": "^3.8.3"
+  },
+  "dependencies": {
+    "express": "^4.17.1"
+  },
+  "scripts": {
+    "dev": "yarn run concurrently -k \"yarn run tsc -w\" \"yarn run nodemon ./index.js\""
+  }
+}
