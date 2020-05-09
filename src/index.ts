@@ -17,6 +17,7 @@ import {
   OpenidRequest,
   unauthorizedHandler,
 } from 'express-openid-connect'
+import uuid, { uuid4 } from './util/uuid'
 
 dotenv.config()
 const PORT: number = parseInt(env['PORT'] || '3300')
@@ -59,7 +60,7 @@ function authorizeWith(authz: Authorizer | null = null): RequestHandler {
     }
   }
 }
-function getUserInfo(req: express.Request): UserinfoResponse | null {
+function requestUser(req: express.Request): UserinfoResponse | null {
   try {
     return ((req as OpenidRequest).openid as any).user as UserinfoResponse
   } catch {
@@ -70,17 +71,13 @@ const router = express.Router()
 router.get('/', (_, res) => {
   res.send('Got it!')
 })
-router.get('/2', (_, res) => {
-  res.send(new Wishlist('test').toString())
+router.get('/2', authorizeWith(), (req, res) => {
+  res.send(new Wishlist(undefined, 'test', requestUser(req)!.sub).toString())
 })
-router.get(
-  '/authtest',
-  authorizeWith(),
-  (req, res) => {
-    let user = getUserInfo(req)!
-    res.send(user)
-  }
-)
+router.get('/authtest', authorizeWith(), (req, res) => {
+  let user = requestUser(req)!
+  res.send(user)
+})
 
 if (env['OAUTH_SECRET'] !== undefined) {
   const authMiddleware = auth({
@@ -98,7 +95,7 @@ if (env['OAUTH_SECRET'] !== undefined) {
       if (maybeUser) {
         let user = maybeUser as UserinfoResponse
         if (user) {
-          // Actually manipulate the username
+          // Actually manipulate the user data
           user.preferred_username =
             user.preferred_username ||
             user.nickname ||
