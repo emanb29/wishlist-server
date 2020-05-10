@@ -10,10 +10,10 @@ export default class Wishlist {
     constructor(
       id: uuid4,
       name: string,
-      description: string | null = null,
-      url: URL | null = null,
-      imageUrl: URL | null = null,
-      reservedBy: string | null = null
+      description: string | null,
+      url: URL | null,
+      imageUrl: URL | null,
+      reservedBy: string | null
     ) {
       this.id = id
       this.name = name

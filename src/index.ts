@@ -15,9 +15,11 @@ const PORT: number = parseInt(env['PORT'] || '3300')
 
 const app = express()
 const router = express.Router()
+// trivial route
 router.get('/', (_, res) => {
   res.send('Got it!')
 })
+// authenticated route
 router.get('/2', authorizeWith(), (req, res) => {
   res.send(
     new Wishlist(
@@ -30,12 +32,25 @@ router.get('/2', authorizeWith(), (req, res) => {
         new Wishlist.Item(
           uuid.v4() as uuid4,
           'A thing I want',
-          undefined,
+          null,
           new URL('https://google.com/'),
-          undefined,
+          null,
           'Jefff'
         ),
       ]
+    ).toString()
+  )
+})
+// optionally-authenticated route
+router.get('/3', (req, res) => {
+  res.send(
+    new Wishlist(
+      uuid.v4() as uuid4,
+      'test',
+      null,
+      requestUser(req)?.sub || 'admin',
+      null,
+      []
     ).toString()
   )
 })
