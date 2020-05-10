@@ -72,7 +72,17 @@ router.get('/', (_, res) => {
   res.send('Got it!')
 })
 router.get('/2', authorizeWith(), (req, res) => {
-  res.send(new Wishlist(undefined, 'test', requestUser(req)!.sub).toString())
+  res.send(
+    new Wishlist(uuid.v4() as uuid4, 'test', requestUser(req)!.sub, [
+      new Wishlist.Item(
+        uuid.v4() as uuid4,
+        'A thing I want',
+        new URL('https://google.com/'),
+        undefined,
+        "Jefff"
+      ),
+    ]).toString()
+  )
 })
 router.get('/authtest', authorizeWith(), (req, res) => {
   let user = requestUser(req)!
