@@ -21,10 +21,10 @@ export const createError = createErrorUnsafe as NamedConstructors
 // done type-safing imports
 
 export interface Authorizer {
-  (user: UserinfoResponse): boolean
+  (user: UserinfoResponse, request: OpenidRequest): boolean
 }
 export function authorizeWith(authz: Authorizer | null = null): RequestHandler {
-  const authorizer = authz || ((_) => true)
+  const authorizer: Authorizer = authz || ((_1, _2) => true)
   return (rawReq: express.Request, _: express.Response, next: NextFunction) => {
     let req = rawReq as OpenidRequest
     if (req === null) {
@@ -43,7 +43,7 @@ export function authorizeWith(authz: Authorizer | null = null): RequestHandler {
       )
     }
     let user = userUnsafe as UserinfoResponse
-    if (!authorizer(user)) {
+    if (!authorizer(user, req)) {
       return next(
         new createError.Forbidden('You are not authorized for this resource.')
       )
