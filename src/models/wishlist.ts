@@ -1,5 +1,5 @@
 import uuid, { uuid4 } from '../util/uuid'
-export default class Wishlist {
+class Wishlist {
   static Item = class {
     id: uuid4
     name: string
@@ -53,6 +53,7 @@ export default class Wishlist {
     return `Wishlist(${JSON.stringify(this)})`
   }
 }
-export namespace Wishlist {
+namespace Wishlist {
   export type Item = InstanceType<typeof Wishlist.Item>
 }
+export default Wishlist

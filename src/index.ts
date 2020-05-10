@@ -1,7 +1,7 @@
 import express from 'express'
 import { unauthorizedHandler } from 'express-openid-connect'
-import dotenv from 'dotenv'
-import { env } from 'process'
+import env from './util/env'
+import asyncHandler from 'express-async-handler'
 import Wishlist from './models/wishlist'
 import uuid, { uuid4 } from './util/uuid'
 import {
@@ -10,15 +10,19 @@ import {
   auth0Middleware,
 } from './util/authorization'
 import createHttpError from 'http-errors'
+import { getWishlistById } from './util/datastore'
 
-dotenv.config()
 const PORT: number = parseInt(env['PORT'] || '3300')
 
 const app = express()
 const router = express.Router()
-router.get('/wishlist/:listId', (req, res) => {
-  throw new createHttpError.NotImplemented()
-})
+router.get(
+  '/wishlist/:listId',
+  asyncHandler(async (req, res) => {
+    await getWishlistById(req.params['listId'] as uuid4)
+    throw new createHttpError.NotImplemented()
+  })
+)
 // trivial route
 router.get('/', (_, res) => {
   res.send('Got it!')
@@ -63,7 +67,7 @@ router.get('/authtest', authorizeWith(), (req, res) => {
   res.send(user)
 })
 
-if (env['OAUTH_SECRET'] !== undefined) {
+if (env['OAUTH_SECRET'] !== undefined || env['FIRESTORE_COLLECTION']) {
   app.use(auth0Middleware)
   app.use(router)
   app.use(unauthorizedHandler())
@@ -71,7 +75,7 @@ if (env['OAUTH_SECRET'] !== undefined) {
     console.log(`Server is listening on ${PORT}`)
   })
 } else {
-  console.log('env+.env did not contain necessary variables.')
+  console.log('env+.env did not contain required variables.')
 }
 
 export default app

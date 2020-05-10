@@ -5,10 +5,8 @@ import {
   ConfigParams as A0Config,
   OpenidRequest,
 } from 'express-openid-connect'
-import { env } from 'process'
-import dotenv from 'dotenv'
 import createHttpError from 'http-errors'
-dotenv.config()
+import env from './env'
 
 // type-safing imports
 const getUserClaimsUnsafe = require('express-openid-connect/lib/hooks/getUser')
