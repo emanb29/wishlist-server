@@ -73,15 +73,23 @@ router.get('/', (_, res) => {
 })
 router.get('/2', authorizeWith(), (req, res) => {
   res.send(
-    new Wishlist(uuid.v4() as uuid4, 'test', requestUser(req)!.sub, [
-      new Wishlist.Item(
-        uuid.v4() as uuid4,
-        'A thing I want',
-        new URL('https://google.com/'),
-        undefined,
-        "Jefff"
-      ),
-    ]).toString()
+    new Wishlist(
+      uuid.v4() as uuid4,
+      'test',
+      null,
+      requestUser(req)!.sub,
+      null,
+      [
+        new Wishlist.Item(
+          uuid.v4() as uuid4,
+          'A thing I want',
+          undefined,
+          new URL('https://google.com/'),
+          undefined,
+          'Jefff'
+        ),
+      ]
+    ).toString()
   )
 })
 router.get('/authtest', authorizeWith(), (req, res) => {
