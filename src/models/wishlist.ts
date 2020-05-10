@@ -1,4 +1,4 @@
-import uuid, { uuid4 } from '../util/uuid'
+import { uuid4 } from '../util/uuid'
 class Wishlist {
   static Item = class {
     id: uuid4
