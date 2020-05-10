@@ -7,6 +7,7 @@ import {
 } from 'express-openid-connect'
 import { env } from 'process'
 import dotenv from 'dotenv'
+import createHttpError from 'http-errors'
 dotenv.config()
 
 // type-safing imports
@@ -16,8 +17,6 @@ const getUserClaims = getUserClaimsUnsafe as (
   config: A0Config
 ) => UserinfoResponse | undefined
 
-import createErrorUnsafe, { NamedConstructors } from 'http-errors'
-export const createError = createErrorUnsafe as NamedConstructors
 // done type-safing imports
 
 export interface Authorizer {
@@ -29,7 +28,7 @@ export function authorizeWith(authz: Authorizer | null = null): RequestHandler {
     let req = rawReq as OpenidRequest
     if (req === null) {
       return next(
-        new createError.Unauthorized(
+        new createHttpError.Unauthorized(
           'Authentication is required for this resource.'
         )
       )
@@ -37,7 +36,7 @@ export function authorizeWith(authz: Authorizer | null = null): RequestHandler {
     let userUnsafe = (req.openid as any).user
     if (!userUnsafe || !(userUnsafe as UserinfoResponse)) {
       return next(
-        new createError.Unauthorized(
+        new createHttpError.Unauthorized(
           'Authentication is required for this resource.'
         )
       )
@@ -45,7 +44,9 @@ export function authorizeWith(authz: Authorizer | null = null): RequestHandler {
     let user = userUnsafe as UserinfoResponse
     if (!authorizer(user, req)) {
       return next(
-        new createError.Forbidden('You are not authorized for this resource.')
+        new createHttpError.Forbidden(
+          'You are not authorized for this resource.'
+        )
       )
     } else {
       return next()

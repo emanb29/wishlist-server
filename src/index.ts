@@ -9,12 +9,16 @@ import {
   requestUser,
   auth0Middleware,
 } from './util/authorization'
+import createHttpError from 'http-errors'
 
 dotenv.config()
 const PORT: number = parseInt(env['PORT'] || '3300')
 
 const app = express()
 const router = express.Router()
+router.get('/wishlist/:listId', (req, res) => {
+  throw new createHttpError.NotImplemented()
+})
 // trivial route
 router.get('/', (_, res) => {
   res.send('Got it!')
