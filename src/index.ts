@@ -8,6 +8,7 @@ import {
   authorizeWith,
   requestUser,
   auth0Middleware,
+  allowCORSFrom,
 } from './util/authorization'
 import createHttpError from 'http-errors'
 import { getWishlistById } from './util/datastore'
@@ -88,7 +89,8 @@ router.get('/authtest', authorizeWith(), (req, res) => {
   res.send(user)
 })
 
-if (env['OAUTH_SECRET'] !== undefined || env['FIRESTORE_COLLECTION']) {
+if (env['OAUTH_SECRET'] && env['FIRESTORE_COLLECTION'] && env['FRONTEND_URL']) {
+  app.use(allowCORSFrom(env['FRONTEND_URL']))
   app.use(auth0Middleware)
   app.use(router)
   app.use(unauthorizedHandler())
