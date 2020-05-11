@@ -11,7 +11,11 @@ import {
   allowCORSFrom,
 } from './util/authorization'
 import createHttpError from 'http-errors'
-import { getWishlistById, getWishlistByUser } from './util/datastore'
+import {
+  getWishlistById,
+  getWishlistByUser,
+  getWishlistByShortname,
+} from './util/datastore'
 import Exceptions from './util/exceptions'
 import { parse } from 'sparkson'
 import bodyParser from 'body-parser'
@@ -24,9 +28,10 @@ const app = express()
 const router = express.Router()
 router.post(
   '/wishlist',
+  authorizeWith(),
   bodyParser.json(),
   asyncHandler(async (req, res) => {
-    console.log('got body: ' + JSON.stringify(req.body))
+    const user = requestUser(req)!
     let parsed: Wishlist
     try {
       parsed = parse<Wishlist>(Wishlist, req.body)
@@ -34,6 +39,9 @@ router.post(
       throw new createHttpError.BadRequest('Invalid Wishlist')
     }
     res.json(parsed)
+    console.info(
+      `${user.preferred_username} created the list ${parsed.shortname}`
+    )
     throw new createHttpError.NotImplemented('committed nothing')
   })
 )
@@ -47,6 +55,20 @@ router.get(
       )
     try {
       await getWishlistById(listId!)
+    } catch (err) {
+      if (err instanceof Exceptions.NoWishlistFound)
+        throw new createHttpError.NotFound(err.message)
+      else throw err
+    }
+    throw new createHttpError.NotImplemented()
+  })
+)
+router.get(
+  '/wishlist/at/:shortnamename',
+  asyncHandler(async (req, _) => {
+    const wlName = req.params['shortnamename']!
+    try {
+      await getWishlistByShortname(wlName)
     } catch (err) {
       if (err instanceof Exceptions.NoWishlistFound)
         throw new createHttpError.NotFound(err.message)
@@ -87,8 +109,9 @@ router.get('/2', authorizeWith(), (req, res) => {
   res.json(
     new Wishlist(
       uuid.v4() as uuid4,
+      'My test list',
       'test',
-      null!,
+      'A list of stuff to test with',
       requestUser(req)!.sub,
       null!,
       [
@@ -110,6 +133,7 @@ router.get('/3', (req, res) => {
     new Wishlist(
       uuid.v4() as uuid4,
       'test',
+      'test',
       null!,
       requestUser(req)?.sub || 'admin',
       null!,
@@ -130,10 +154,10 @@ if (env['OAUTH_SECRET'] && env['FIRESTORE_COLLECTION'] && env['FRONTEND_URL']) {
   app.use(unauthorizedHandler())
   app.use(sanitizeExceptions)
   app.listen(PORT, () => {
-    console.log(`Server is listening on ${PORT}`)
+    console.info(`Server is listening on ${PORT}`)
   })
 } else {
-  console.log('env+.env did not contain required variables.')
+  console.info('env+.env did not contain required variables.')
 }
 
 export default app

@@ -34,3 +34,17 @@ export async function getWishlistByUser(sub: string): Promise<Wishlist> {
   let [wishlist] = docs
   return wishlist.data() as Wishlist
 }
+export async function getWishlistByShortname(name: string): Promise<Wishlist> {
+  let docs = (await collection.where('shortname', '==', name).get()).docs
+  if (docs.length === 0) {
+    throw new Exceptions.NoWishlistFound(
+      `No wishlist exists with the provided short name`
+    )
+  } else if (docs.length > 1) {
+    throw new Exceptions.NonUniqueWithlistId(
+      `Multiple wishlists were found matching the provided short name`
+    )
+  }
+  let [wishlist] = docs
+  return wishlist.data() as Wishlist
+}

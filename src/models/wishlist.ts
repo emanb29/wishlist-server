@@ -8,6 +8,7 @@ export class Wishlist {
   constructor(
     @Field('id') @Regexp(anyUUIDRegex) public id: uuid4,
     @Field('name') public name: string,
+    @Field('shortname') public shortname: string, // The URL shortname of the list
     @Field('description', true, undefined, null)
     public description: NullableString,
     @Field('owner') public owner: string, // a sub string of a user
