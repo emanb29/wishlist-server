@@ -7,7 +7,6 @@ export const storage = new Firestore() // data.
 export const collection = storage.collection(env['FIRESTORE_COLLECTION']!)
 
 export async function getWishlistById(id: anyUUID): Promise<Wishlist> {
-  console.debug('in getwishlistbyid')
   let docs = (await collection.where('id', '==', id).get()).docs
   if (docs.length === 0) {
     throw new Exceptions.NoWishlistFound(
@@ -19,9 +18,19 @@ export async function getWishlistById(id: anyUUID): Promise<Wishlist> {
     )
   }
   let [wishlist] = docs
-  console.log(`list was ${wishlist.data()}`)
   return wishlist.data() as Wishlist
 }
-// export async function getWishlistByUser(sub: string): Promise<Wishlist> {
-
-// }
+export async function getWishlistByUser(sub: string): Promise<Wishlist> {
+  let docs = (await collection.where('owner', '==', sub).get()).docs
+  if (docs.length === 0) {
+    throw new Exceptions.NoWishlistFound(
+      `No wishlist exists by the provided user`
+    )
+  } else if (docs.length > 1) {
+    throw new Exceptions.NonUniqueWithlistId(
+      `Multiple wishlists were found matching the provided user`
+    )
+  }
+  let [wishlist] = docs
+  return wishlist.data() as Wishlist
+}

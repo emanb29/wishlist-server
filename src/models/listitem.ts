@@ -1,22 +1,21 @@
+import { Field, Regexp } from 'sparkson'
 import { uuid4, anyUUIDRegex } from '../util/uuid'
-import { ArrayField, Field, Regexp } from 'sparkson'
-import ListItem from './listitem'
 import { NullableUrl, NullableString } from '../util/serialization'
 
-export class Wishlist {
-  static Item = ListItem
+export class ListItem {
   constructor(
     @Field('id') @Regexp(anyUUIDRegex) public id: uuid4,
     @Field('name') public name: string,
     @Field('description', true, undefined, null)
     public description: NullableString,
-    @Field('owner') public owner: string, // a sub string of a user
+    @Field('url', true, undefined, null) public url: NullableUrl,
     @Field('imageUrl', true, undefined, null) public imageUrl: NullableUrl,
-    @ArrayField('items', ListItem) public items: Array<ListItem>
+    @Field('reservedBy', true, undefined, null)
+    public reservedBy: NullableString
   ) {}
 
   toString() {
-    return `Wishlist(${JSON.stringify(this)})`
+    return `Item(${JSON.stringify(this)})`
   }
 }
-export default Wishlist
+export default ListItem
