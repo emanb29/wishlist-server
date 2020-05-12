@@ -95,7 +95,7 @@ export const auth0Middleware = auth({
       } else return user
     } else return undefined
   },
-  baseURL: 'http://localhost:3300', // TODO
+  baseURL: env['API_URL'], // TODO
   clientID: 'leqCRd11z1BGFUIYzTX71d8L6wbPjzJ4',
   issuerBaseURL: 'https://wishlist-app.auth0.com',
 })
