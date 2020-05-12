@@ -1,4 +1,4 @@
-import express, { ErrorRequestHandler, json } from 'express'
+import express, { ErrorRequestHandler, json, response } from 'express'
 import { unauthorizedHandler } from 'express-openid-connect'
 import env from './util/env'
 import asyncHandler from 'express-async-handler'
@@ -15,6 +15,7 @@ import {
   getWishlistById,
   getWishlistByUser,
   getWishlistByShortname,
+  makeWishlist,
 } from './util/datastore'
 import Exceptions from './util/exceptions'
 import { parse } from 'sparkson'
@@ -28,67 +29,79 @@ const app = express()
 const router = express.Router()
 router.post(
   '/wishlist',
-  authorizeWith(),
+  authorizeWith(), // authenticate
   bodyParser.json(),
+  authorizeWith(
+    (user, req) => req.body && req.body.owner && req.body.owner === user.sub
+  ), // authorize
   asyncHandler(async (req, res) => {
     const user = requestUser(req)!
     let parsed: Wishlist
+    let roundtripped: Wishlist
     try {
       parsed = parse<Wishlist>(Wishlist, req.body)
     } catch {
       throw new createHttpError.BadRequest('Invalid Wishlist')
     }
-    res.json(parsed)
+    try {
+      roundtripped = await makeWishlist(parsed)
+    } catch (err) {
+      throw new createHttpError.BadRequest(err.message)
+    }
+    res.status(201)
+    res.json(roundtripped)
     console.info(
       `${user.preferred_username} created the list ${parsed.shortname}`
     )
-    throw new createHttpError.NotImplemented('committed nothing')
   })
 )
 router.get(
   `/wishlist/:listId(${anyUUIDRegex.source})`,
-  asyncHandler(async (req, _) => {
+  asyncHandler(async (req, res) => {
     const listId = parseUUID(req.params['listId'])
+    let wishlist: Wishlist
     if (listId === null)
       throw new createHttpError.BadRequest(
         'The provided list ID was not a UUID'
       )
     try {
-      await getWishlistById(listId!)
+      wishlist = await getWishlistById(listId!)
     } catch (err) {
       if (err instanceof Exceptions.NoWishlistFound)
         throw new createHttpError.NotFound(err.message)
       else throw err
     }
-    throw new createHttpError.NotImplemented()
+    res.json(wishlist)
   })
 )
 router.get(
-  '/wishlist/at/:shortnamename',
-  asyncHandler(async (req, _) => {
-    const wlName = req.params['shortnamename']!
+  '/wishlist/at/:shortname',
+  asyncHandler(async (req, res) => {
+    const wlName = req.params['shortname']!
+    let wishlist: Wishlist
     try {
-      await getWishlistByShortname(wlName)
+      wishlist = await getWishlistByShortname(wlName)
     } catch (err) {
       if (err instanceof Exceptions.NoWishlistFound)
         throw new createHttpError.NotFound(err.message)
       else throw err
     }
-    throw new createHttpError.NotImplemented()
+    res.json(wishlist)
   })
 )
 router.get(
   '/wishlist/by/:sub',
-  asyncHandler(async (req, _) => {
+  asyncHandler(async (req, res) => {
     const ownerSub = req.params['sub']!
+    let wishlist: Wishlist
     try {
-      await getWishlistByUser(ownerSub)
+      wishlist = await getWishlistByUser(ownerSub)
     } catch (err) {
       if (err instanceof Exceptions.NoWishlistFound)
         throw new createHttpError.NotFound(err.message)
       else throw err
     }
-    throw new createHttpError.NotImplemented()
+    res.json(wishlist)
   })
 )
 const sanitizeExceptions: ErrorRequestHandler = (err, req, res, next) => {

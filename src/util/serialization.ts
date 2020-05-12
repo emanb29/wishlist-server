@@ -11,4 +11,7 @@ export class NullableUrl extends URL {
 export class NullableString extends String {
   static type = 'NullableString'
 }
+export function untype<T>(obj: T): object {
+  return JSON.parse(JSON.stringify(obj))
+}
 export default registerSerializers

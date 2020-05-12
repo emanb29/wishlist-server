@@ -3,6 +3,7 @@ import env from './env'
 import { anyUUID } from './uuid'
 import Wishlist from '../models/wishlist'
 import Exceptions from './exceptions'
+import { untype } from './serialization'
 export const storage = new Firestore() // data.
 export const collection = storage.collection(env['FIRESTORE_COLLECTION']!)
 
@@ -47,4 +48,23 @@ export async function getWishlistByShortname(name: string): Promise<Wishlist> {
   }
   let [wishlist] = docs
   return wishlist.data() as Wishlist
+}
+
+export async function makeWishlist(list: Wishlist): Promise<Wishlist> {
+  let noCollisions =
+    (await (await collection.where('id', '==', list.id).limit(1).get())
+      .empty) &&
+    (await (await collection.where('owner', '==', list.owner).limit(1).get())
+      .empty) &&
+    (await (
+      await collection.where('shortname', '==', list.shortname).limit(1).get()
+    ).empty)
+  if (noCollisions) {
+    console.debug(`uploading new wishlist ${list}`)
+    return (await (await collection.add(untype(list))).get()).data() as Wishlist
+  } else {
+    throw new Exceptions.NonUniqueWithlistId(
+      'The wishlist provided had either a duplicate shortname, owner, or id'
+    )
+  }
 }
