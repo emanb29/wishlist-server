@@ -1,0 +1,53 @@
+name: Deploy
+
+# Controls when the action will run. Triggers the workflow on push or pull request
+# events but only for the master branch
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+    - name: Install Dependencies
+      uses: Borales/actions-yarn@v2.1.0
+      with:
+        cmd: install
+    - name: Compile 
+      uses: Borales/actions-yarn@v2.1.0
+      with:
+        cmd: run tsc
+    - name: Copy package.json
+      run: cp package.json dist/
+    - name: Upload Built Site
+      uses: actions/upload-artifact@v1.0.0
+      with:
+        name: latest
+        path: dist
+  deploy:
+    needs: build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    steps:
+    - name: Download Built Site
+      uses: actions/download-artifact@v1.0.0
+      with:
+        name: static-latest
+        path: ./dist
+    - name: Setup gcloud environment
+      uses: GoogleCloudPlatform/github-actions@0.1.2
+      with:
+        version: 275.0.0
+        # The service account email which will be used for authentication.
+        service_account_email: ${{ secrets.gcf_name }}
+        # The service account key which will be used for authentication.
+        service_account_key: ${{ secrets.gcf_key }}
+    - name: Push to GCF # note that the cloud function is preconfigured
+      shell: bash # pipe to dev null because env vars may be sensitive
+      run: cd ./dist && gcloud functions deploy wishlist --entry-point wishlist --source . > /dev/null
