@@ -239,5 +239,5 @@ if (env['OAUTH_SECRET'] && env['FIRESTORE_COLLECTION'] && env['FRONTEND_URL']) {
 } else {
   console.info('env+.env did not contain required variables.')
 }
-
+export const wishlist = app
 export default app
