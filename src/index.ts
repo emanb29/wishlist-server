@@ -9,6 +9,7 @@ import {
   requestUser,
   auth0Middleware,
   allowCORSFrom,
+  Authorizer,
 } from './util/authorization'
 import createHttpError from 'http-errors'
 import {
@@ -17,7 +18,7 @@ import {
   getWishlistByShortname,
   makeWishlist,
 } from './util/datastore'
-import Exceptions from './util/exceptions'
+import Exceptions, { sanitizeExceptions } from './util/exceptions'
 import { parse } from 'sparkson'
 import bodyParser from 'body-parser'
 import { ListItem } from './models/listitem'
@@ -25,15 +26,16 @@ import registerSerializers from './util/serialization'
 
 const PORT: number = parseInt(env['PORT'] || '3300')
 
+const userOwnsList: Authorizer = (user, req) =>
+  req.body && req.body.owner && req.body.owner === user.sub
+
 const app = express()
 const router = express.Router()
 router.post(
   '/wishlist',
   authorizeWith(), // authenticate
   bodyParser.json(),
-  authorizeWith(
-    (user, req) => req.body && req.body.owner && req.body.owner === user.sub
-  ), // authorize
+  authorizeWith(userOwnsList), // authorize
   asyncHandler(async (req, res) => {
     const user = requestUser(req)!
     let parsed: Wishlist
@@ -104,15 +106,6 @@ router.get(
     res.json(wishlist)
   })
 )
-const sanitizeExceptions: ErrorRequestHandler = (err, req, res, next) => {
-  if (err && '__isWishlistException__' in err) {
-    return next(
-      new createHttpError.InternalServerError(
-        'An error occured while processing your request'
-      )
-    )
-  } else return next(err)
-}
 // trivial route
 router.get('/', (_, res) => {
   res.send('Got it!')
@@ -135,6 +128,22 @@ router.get('/2', authorizeWith(), (req, res) => {
           new URL('https://google.com/'),
           null!,
           'Jefff'
+        ),
+        new ListItem(
+          uuid.v4() as uuid4,
+          'Another thing I want',
+          'This one has a description',
+          new URL('https://yahoo.com/'),
+          null!,
+          'Jefff2'
+        ),
+        new ListItem(
+          uuid.v4() as uuid4,
+          'Third thing',
+          'also described here',
+          new URL('https://bing.com/'),
+          null!,
+          'Jefff3'
         ),
       ]
     )

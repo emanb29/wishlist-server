@@ -1,3 +1,6 @@
+import createHttpError from "http-errors"
+import { ErrorRequestHandler } from "express"
+
 export interface Exception {
   message: string
   __isWishlistException__: null
@@ -15,5 +18,15 @@ export class NonUniqueWithlistId extends BaseException {}
 export const Exceptions = {
   NoWishlistFound,
   NonUniqueWithlistId,
+}
+
+export const sanitizeExceptions: ErrorRequestHandler = (err, req, res, next) => {
+  if (err && '__isWishlistException__' in err) {
+    return next(
+      new createHttpError.InternalServerError(
+        'An error occured while processing your request'
+      )
+    )
+  } else return next(err)
 }
 export default Exceptions
