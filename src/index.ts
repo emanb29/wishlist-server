@@ -233,9 +233,9 @@ if (env['OAUTH_SECRET'] && env['FIRESTORE_COLLECTION'] && env['FRONTEND_URL']) {
   app.use(router)
   app.use(unauthorizedHandler())
   app.use(sanitizeExceptions)
-  app.listen(PORT, () => {
-    console.info(`Server is listening on ${PORT}`)
-  })
+  // app.listen(PORT, () => {
+  //   console.info(`Server is listening on ${PORT}`)
+  // })
 } else {
   console.info('env+.env did not contain required variables.')
 }
