@@ -7,18 +7,14 @@ import {
 } from 'express-openid-connect'
 import createHttpError from 'http-errors'
 import env from './env'
+import cors from 'cors'
 
 export function allowCORSFrom(domain: string): RequestHandler {
-  return (req, res, next) => {
-    // If a referrer is set, and the domain does nto match, don't bother adding CORS headers for domain
-    if (req.get('Referer') && !req.get('Referer')!.includes(domain)) {
-      return next()
-    }
-    res.set('Access-Control-Allow-Origin', domain)
-    res.set('Access-Control-Allow-Credentials', 'true')
-    res.set('Access-Control-Allow-Headers', 'Authorization')
-    return next()
-  }
+  return cors({
+    origin: domain,
+    optionsSuccessStatus: 200,
+    credentials: true,
+  })
 }
 
 // type-safing imports
