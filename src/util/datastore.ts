@@ -50,7 +50,7 @@ export async function getWishlistByShortname(name: string): Promise<Wishlist> {
   return wishlist.data() as Wishlist
 }
 
-export async function makeWishlist(list: Wishlist): Promise<Wishlist> {
+export async function addWishlist(list: Wishlist): Promise<Wishlist> {
   let noCollisions =
     (await (
       await collection.where('shortname', '==', list.shortname).limit(1).get()
@@ -63,8 +63,43 @@ export async function makeWishlist(list: Wishlist): Promise<Wishlist> {
     console.debug(`uploading new wishlist ${list}`)
     return (await (await collection.add(untype(list))).get()).data() as Wishlist
   } else {
-    throw new Exceptions.NonUniqueWithlistId(
+    throw new Exceptions.ConflictingWishlistFound(
       'The wishlist provided had either a duplicate shortname, owner, or id'
     )
   }
+}
+export async function updateWishlist(
+  id: anyUUID,
+  newList: Wishlist
+): Promise<Wishlist> {
+  let noCollisions = await (
+    await collection
+      .where('shortname', '==', newList.shortname) // ensure we aren't overwriting another existing list
+      .limit(2)
+      .get()
+  ).docs.every((doc) => doc.data().owner === newList.owner)
+  if (!noCollisions) {
+    throw new Exceptions.ConflictingWishlistFound(
+      'There is already a wishlist with that shortname'
+    )
+  }
+  let docs = (
+    await collection
+      .where('owner', '==', newList.owner)
+      .where('id', '==', id) // ensure we aren't overwriting someone else's list
+      .get()
+  ).docs
+  if (docs.length === 0) {
+    throw new Exceptions.NoWishlistFound(
+      `No wishlist exists with the provided ID`
+    )
+  } else if (docs.length > 1) {
+    throw new Exceptions.NonUniqueWithlistId(
+      `Multiple wishlists matched the provided ID`
+    )
+  }
+  let [oldList] = docs
+  await oldList.ref.set(untype(newList))
+
+  return newList
 }

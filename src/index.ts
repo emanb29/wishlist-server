@@ -3,7 +3,7 @@ import { unauthorizedHandler } from 'express-openid-connect'
 import env from './util/env'
 import asyncHandler from 'express-async-handler'
 import { Wishlist } from './models/wishlist'
-import uuid, { uuid4, parseUUID, anyUUIDRegex } from './util/uuid'
+import uuid, { uuid4, parseUUID, containsAnyUUIDRegex } from './util/uuid'
 import {
   authorizeWith,
   requestUser,
@@ -16,7 +16,8 @@ import {
   getWishlistById,
   getWishlistByUser,
   getWishlistByShortname,
-  makeWishlist,
+  addWishlist,
+  updateWishlist,
 } from './util/datastore'
 import Exceptions, { sanitizeExceptions } from './util/exceptions'
 import { parse } from 'sparkson'
@@ -38,27 +39,55 @@ router.post(
   authorizeWith(userOwnsList), // authorize
   asyncHandler(async (req, res) => {
     const user = requestUser(req)!
-    let parsed: Wishlist
-    let roundtripped: Wishlist
+    let list: Wishlist
+    let savedList: Wishlist
     try {
-      parsed = parse<Wishlist>(Wishlist, req.body)
+      list = parse<Wishlist>(Wishlist, req.body)
     } catch {
       throw new createHttpError.BadRequest('Invalid Wishlist')
     }
     try {
-      roundtripped = await makeWishlist(parsed)
+      savedList = await addWishlist(list)
     } catch (err) {
       throw new createHttpError.BadRequest(err.message)
     }
     res.status(201)
-    res.json(roundtripped)
+    res.json(savedList)
     console.info(
-      `${user.preferred_username} created the list ${parsed.shortname}`
+      `${user.preferred_username} created the list ${list.shortname}`
     )
   })
 )
+router.put(
+  `/wishlist/:listId(${containsAnyUUIDRegex.source})`,
+  authorizeWith(), // authenticate
+  bodyParser.json(),
+  authorizeWith(userOwnsList), // authorize
+  asyncHandler(async (req, res) => {
+    const listId = parseUUID(req.params['listId'])
+    if (listId === null)
+      throw new createHttpError.BadRequest(
+        'The provided list ID was not a UUID'
+      )
+    let list: Wishlist
+    let savedList: Wishlist
+    try {
+      list = parse<Wishlist>(Wishlist, req.body)
+    } catch {
+      throw new createHttpError.BadRequest('Invalid Wishlist')
+    }
+    try {
+      savedList = await updateWishlist(listId!, list)
+    } catch (err) {
+      if (err instanceof Exceptions.NoWishlistFound)
+        throw new createHttpError.NotFound(err.message)
+      else throw err
+    }
+    res.json(savedList)
+  })
+)
 router.get(
-  `/wishlist/:listId(${anyUUIDRegex.source})`,
+  `/wishlist/:listId(${containsAnyUUIDRegex.source})`,
   asyncHandler(async (req, res) => {
     const listId = parseUUID(req.params['listId'])
     let wishlist: Wishlist
