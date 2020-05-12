@@ -52,13 +52,13 @@ export async function getWishlistByShortname(name: string): Promise<Wishlist> {
 
 export async function makeWishlist(list: Wishlist): Promise<Wishlist> {
   let noCollisions =
+    (await (
+      await collection.where('shortname', '==', list.shortname).limit(1).get()
+    ).empty) &&
     (await (await collection.where('id', '==', list.id).limit(1).get())
       .empty) &&
     (await (await collection.where('owner', '==', list.owner).limit(1).get())
-      .empty) &&
-    (await (
-      await collection.where('shortname', '==', list.shortname).limit(1).get()
-    ).empty)
+      .empty)
   if (noCollisions) {
     console.debug(`uploading new wishlist ${list}`)
     return (await (await collection.add(untype(list))).get()).data() as Wishlist
