@@ -18,4 +18,10 @@ export class ListItem {
     return `Item(${JSON.stringify(this)})`
   }
 }
+export class Reservation {
+  constructor(
+    @Field('reservedBy', true, undefined, null)
+    public reservedBy: NullableString
+  ) {}
+}
 export default ListItem

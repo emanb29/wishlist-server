@@ -18,12 +18,13 @@ import {
   getWishlistByShortname,
   addWishlist,
   updateWishlist,
+  updateReservation,
 } from './util/datastore'
 import Exceptions, { sanitizeExceptions } from './util/exceptions'
 import { parse } from 'sparkson'
 import bodyParser from 'body-parser'
-import { ListItem } from './models/listitem'
-import registerSerializers from './util/serialization'
+import { ListItem, Reservation } from './models/listitem'
+import registerSerializers, { NullableString } from './util/serialization'
 
 const PORT: number = parseInt(env['PORT'] || '3300')
 
@@ -83,6 +84,34 @@ router.put(
         throw new createHttpError.NotFound(err.message)
       else throw err
     }
+    res.json(savedList)
+  })
+)
+router.put(
+  `/wishlist/:listId(${containsAnyUUIDRegex.source})/:itemId(${containsAnyUUIDRegex.source})/reservation`,
+  bodyParser.json(),
+  asyncHandler(async (req, res) => {
+    const listId = parseUUID(req.params['listId'])
+    const itemId = parseUUID(req.params['itemId'])
+    if (listId === null)
+      throw new createHttpError.BadRequest(
+        'The provided list ID was not a UUID'
+      )
+    if (itemId === null)
+      throw new createHttpError.BadRequest(
+        'The provided item ID was not a UUID'
+      )
+    let newReservation: Reservation
+    try {
+      newReservation = parse(Reservation, req.body)
+    } catch {
+      throw new createHttpError.BadRequest('Invalid Reservation')
+    }
+    let savedList = await updateReservation(
+      listId,
+      (itemId as string) as uuid4,
+      newReservation.reservedBy as string | null
+    )
     res.json(savedList)
   })
 )

@@ -13,13 +13,15 @@ abstract class BaseException implements Exception {
   }
 }
 export class NoWishlistFound extends BaseException {}
-export class NonUniqueWithlistId extends BaseException {} // from retrieval operations
+export class NoItemFound extends BaseException {}
+export class NonUniqueWishlistId extends BaseException {} // from retrieval operations
 export class UpdateFailed extends BaseException {}
 export class ConflictingWishlistFound extends BaseException {} // from mutation operations
 
 export const Exceptions = {
   NoWishlistFound,
-  NonUniqueWithlistId,
+  NoItemFound,
+  NonUniqueWishlistId,
   UpdateFailed,
   ConflictingWishlistFound,
 }

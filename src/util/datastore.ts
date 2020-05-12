@@ -1,6 +1,6 @@
 import { Firestore } from '@google-cloud/firestore'
 import env from './env'
-import { anyUUID } from './uuid'
+import { anyUUID, uuid4 } from './uuid'
 import Wishlist from '../models/wishlist'
 import Exceptions from './exceptions'
 import { untype } from './serialization'
@@ -14,7 +14,7 @@ export async function getWishlistById(id: anyUUID): Promise<Wishlist> {
       `No wishlist exists with the provided ID`
     )
   } else if (docs.length > 1) {
-    throw new Exceptions.NonUniqueWithlistId(
+    throw new Exceptions.NonUniqueWishlistId(
       `Multiple wishlists matched the provided ID`
     )
   }
@@ -28,7 +28,7 @@ export async function getWishlistByUser(sub: string): Promise<Wishlist> {
       `No wishlist exists by the provided user`
     )
   } else if (docs.length > 1) {
-    throw new Exceptions.NonUniqueWithlistId(
+    throw new Exceptions.NonUniqueWishlistId(
       `Multiple wishlists were found matching the provided user`
     )
   }
@@ -42,7 +42,7 @@ export async function getWishlistByShortname(name: string): Promise<Wishlist> {
       `No wishlist exists with the provided short name`
     )
   } else if (docs.length > 1) {
-    throw new Exceptions.NonUniqueWithlistId(
+    throw new Exceptions.NonUniqueWishlistId(
       `Multiple wishlists were found matching the provided short name`
     )
   }
@@ -94,7 +94,7 @@ export async function updateWishlist(
       `No wishlist exists with the provided ID`
     )
   } else if (docs.length > 1) {
-    throw new Exceptions.NonUniqueWithlistId(
+    throw new Exceptions.NonUniqueWishlistId(
       `Multiple wishlists matched the provided ID`
     )
   }
@@ -102,4 +102,29 @@ export async function updateWishlist(
   await oldList.ref.set(untype(newList))
 
   return newList
+}
+export async function updateReservation(
+  listId: anyUUID,
+  itemId: uuid4,
+  reservedBy: string | null
+): Promise<Wishlist> {
+  let docs = (await collection.where('id', '==', listId).get()).docs
+  if (docs.length === 0) {
+    throw new Exceptions.NoWishlistFound(
+      `No wishlist exists with the provided ID`
+    )
+  } else if (docs.length > 1) {
+    throw new Exceptions.NonUniqueWishlistId(
+      `Multiple wishlists matched the provided ID`
+    )
+  }
+  let wishlist = docs[0].data() as Wishlist
+  let itemIdx = wishlist.items.findIndex((li) => li.id === itemId)
+  if (itemIdx == -1) {
+    throw new Exceptions.NoItemFound(
+      `Could not find any item with ID ${itemId} in wishlist ${listId}`
+    )
+  }
+  wishlist.items[itemIdx].reservedBy = reservedBy! // mutation
+  return updateWishlist(listId, wishlist)
 }
