@@ -19,12 +19,12 @@ jobs:
       uses: Borales/actions-yarn@v2.1.0
       with:
         cmd: install
-    - name: Compile 
+    - name: Compile
       uses: Borales/actions-yarn@v2.1.0
       with:
         cmd: run tsc
     - name: Copy package.json
-      run: cp package.json dist/
+      run: sudo cp package.json dist/ # unclear why this needs sudo ¯\_(ツ)_/¯
     - name: Upload Built Site
       uses: actions/upload-artifact@v1.0.0
       with:
@@ -38,7 +38,7 @@ jobs:
     - name: Download Built Site
       uses: actions/download-artifact@v1.0.0
       with:
-        name: static-latest
+        name: latest
         path: ./dist
     - name: Setup gcloud environment
       uses: GoogleCloudPlatform/github-actions@0.1.2
@@ -50,4 +50,4 @@ jobs:
         service_account_key: ${{ secrets.gcf_key }}
     - name: Push to GCF # note that the cloud function is preconfigured
       shell: bash # pipe to dev null because env vars may be sensitive
-      run: cd ./dist && gcloud functions deploy wishlist --entry-point wishlist --source . > /dev/null
+      run: cd ./dist && gcloud functions deploy wishlist --region us-central1 --project wishlist-275117 --entry-point wishlist --source . --runtime nodejs10 > /dev/null
