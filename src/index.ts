@@ -233,7 +233,8 @@ if (env['OAUTH_SECRET'] && env['FIRESTORE_COLLECTION'] && env['FRONTEND_URL']) {
   app.use(router)
   app.use(unauthorizedHandler())
   app.use(sanitizeExceptions)
-  if (env['NODE_ENV'] && env['NODE_ENV'] === 'development') { // GCF does this for us in prod
+  if (env['NODE_ENV'] && env['NODE_ENV'] === 'development') {
+    // GCF does the listen() for us in prod
     app.listen(PORT, () => {
       console.info(`Server is listening on ${PORT}`)
     })

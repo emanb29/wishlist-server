@@ -11,7 +11,9 @@ import cors from 'cors'
 
 export function allowCORSFrom(domain: string): RequestHandler {
   return cors({
-    origin: domain,
+    origin: (origin, callback) => {
+      callback(null, domain === origin)
+    },
     optionsSuccessStatus: 200,
     credentials: true,
   })
