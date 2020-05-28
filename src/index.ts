@@ -223,7 +223,6 @@ router.get('/3', (req, res) => {
 })
 router.get('/me', authorizeWith(), (req, res) => {
   const user = requestUser(req)!
-  console.debug(`Got request for user info for user ${user.preferred_username}`)
   res.json(user)
 })
 
