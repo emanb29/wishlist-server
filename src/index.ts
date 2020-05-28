@@ -221,8 +221,9 @@ router.get('/3', (req, res) => {
     )
   )
 })
-router.get('/authtest', authorizeWith(), (req, res) => {
-  let user = requestUser(req)!
+router.get('/me', authorizeWith(), (req, res) => {
+  const user = requestUser(req)!
+  console.debug(`Got request for user info for user ${user.preferred_username}`)
   res.json(user)
 })
 
@@ -240,7 +241,7 @@ if (env['OAUTH_SECRET'] && env['FIRESTORE_COLLECTION'] && env['FRONTEND_URL']) {
     })
   }
 } else {
-  console.info('env+.env did not contain required variables.')
+  console.error('env+.env did not contain required variables.')
 }
 export const wishlist = app
 export default app
