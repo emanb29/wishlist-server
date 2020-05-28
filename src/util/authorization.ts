@@ -8,6 +8,7 @@ import {
 import createHttpError from 'http-errors'
 import env from './env'
 import cors from 'cors'
+import jwt from 'jsonwebtoken'
 
 export function allowCORSFrom(domain: string): RequestHandler {
   return cors({
@@ -70,6 +71,23 @@ export function requestUser(req: express.Request): UserinfoResponse | null {
     return null
   }
 }
+
+function guessPreferredUsername(user: {
+  preferred_username?: string
+  nickname?: string
+  given_name?: string
+  name?: string
+  email?: string
+}): string | undefined {
+  return (
+    user.preferred_username ||
+    user.nickname ||
+    user.given_name ||
+    user.name ||
+    user.email
+  )
+}
+
 export const auth0Middleware = auth({
   required: false,
   errorOnRequiredAuth: false,
@@ -83,12 +101,7 @@ export const auth0Middleware = auth({
       let user = maybeUser as UserinfoResponse
       if (user) {
         // Actually manipulate the user data
-        user.preferred_username =
-          user.preferred_username ||
-          user.nickname ||
-          user.given_name ||
-          user.name ||
-          user.email
+        user.preferred_username = guessPreferredUsername(user)
         return user
       } else return user
     } else return undefined
@@ -96,4 +109,17 @@ export const auth0Middleware = auth({
   baseURL: env['API_URL'], // TODO
   clientID: 'leqCRd11z1BGFUIYzTX71d8L6wbPjzJ4',
   issuerBaseURL: 'https://wishlist-app.auth0.com',
+  handleCallback(req, res, next) {
+    // TODO validate that something before this actually verifies the jwt
+    try {
+      const username = guessPreferredUsername(
+        jwt.decode(req.openidTokens.id_token!) as any
+      )
+      res.cookie('authenticated', username)
+      res.redirect(env['FRONTEND_URL']!)
+    } catch (err) {
+      console.warn(`Unexpected error trying to decode a login: ${err}`)
+      return next()
+    }
+  },
 })
