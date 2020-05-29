@@ -94,6 +94,9 @@ export const auth0Middleware = auth({
   auth0Logout: true,
   appSession: {
     secret: env['OAUTH_SECRET'],
+    cookieHttpOnly: true,
+    cookieSameSite: "None",
+    cookieSecure: true,
   },
   getUser(req: OpenidRequest, config: A0Config): UserinfoResponse | undefined {
     let maybeUser = getUserClaims(req, config)
